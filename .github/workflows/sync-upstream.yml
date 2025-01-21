@@ -2,7 +2,7 @@ name: Sync with Upstream
 
 on:
   schedule:
-    # 每天 UTC 时间凌晨 3 点运行（你可以根据需要修改时间）
+    # 每天 UTC 时间上午 11 点运行（你可以根据需要修改时间）
     - cron: '0 11 * * *'
   workflow_dispatch: # 允许手动触发
   push:
@@ -20,6 +20,12 @@ jobs:
         with:
           persist-credentials: false # 禁止自动使用默认 GitHub token
           fetch-depth: 0 # 确保能获取所有 commit 历史
+
+      # 设置 Git 用户名和邮箱
+      - name: Configure Git
+        run: |
+          git config --global user.name "chenxin"
+          git config --global user.email "517242860@qq.com"
 
       # 添加原始仓库为远程源
       - name: Add Upstream
