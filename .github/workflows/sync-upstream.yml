@@ -2,12 +2,14 @@ name: Sync with Upstream
 
 on:
   schedule:
-    # 每天 UTC 时间上午 11 点运行（你可以根据需要修改时间）
-    - cron: '0 11 * * *'
-  workflow_dispatch: # 允许手动触发
+    - cron: '0 11 * * *' # 每天 UTC 时间上午 11 点运行同步
+    - cron: '0 12 * * 0' # 每周 UTC 时间周日中午 12 点运行清理任务
+  workflow_dispatch: # 手动触发
   push:
     branches:
-      - main # 监听 Fork 仓库的 main 分支
+      - main
+    paths-ignore:
+      - '.github/workflows/sync-upstream.yml' # 忽略自身文件更改
 
 jobs:
   sync:
@@ -18,8 +20,8 @@ jobs:
       - name: Checkout Fork repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: false # 禁用默认凭据（仍然需要手动设置凭据）
-          fetch-depth: 0 # 确保能获取所有 commit 历史
+          persist-credentials: false
+          fetch-depth: 0
 
       # 设置 Git 用户名和邮箱
       - name: Configure Git
@@ -38,6 +40,39 @@ jobs:
       # 推送同步的更改到 Fork 仓库
       - name: Push changes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的 Token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main
+
+  cleanup:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 12 * * 0' # 仅在指定时间运行清理任务
+
+    steps:
+      # 检查代码
+      - name: Checkout Fork repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # 设置 Git 用户名和邮箱
+      - name: Configure Git
+        run: |
+          git config --global user.name "chenxin"
+          git config --global user.email "517242860@qq.com"
+
+      # 清理本地过期分支
+      - name: Clean up local branches
+        run: |
+          git fetch --prune
+          git branch --merged | grep -v "\*" | grep -v "main" | xargs -n 1 git branch -d
+
+      # 删除 GitHub Actions 生成的缓存
+      - name: Clear GitHub Actions cache
+        run: |
+          rm -rf ~/.npm ~/.cache ~/.gradle ~/.cargo ~/.rustup ~/.local/share/containers
+
+      # 输出清理完成信息
+      - name: Cleanup complete
+        run: echo "Cleanup task completed successfully!"
