@@ -1,0 +1,37 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    # 每天 UTC 时间凌晨 3 点运行（你可以根据需要修改时间）
+    - cron: '0 11 * * *'
+  workflow_dispatch: # 允许手动触发
+  push:
+    branches:
+      - main # 监听 Fork 仓库的 main 分支
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检查代码
+      - name: Checkout Fork repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false # 禁止自动使用默认 GitHub token
+          fetch-depth: 0 # 确保能获取所有 commit 历史
+
+      # 添加原始仓库为远程源
+      - name: Add Upstream
+        run: |
+          git remote add upstream https://github.com/jaywcjlove/reference.git
+          git fetch upstream
+          git checkout main
+          git merge upstream/main
+
+      # 推送同步的更改到 Fork 仓库
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin main
