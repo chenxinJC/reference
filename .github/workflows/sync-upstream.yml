@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Fork repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: false # 禁止自动使用默认 GitHub token
+          persist-credentials: false # 禁用默认凭据（仍然需要手动设置凭据）
           fetch-depth: 0 # 确保能获取所有 commit 历史
 
       # 设置 Git 用户名和邮箱
@@ -38,6 +38,6 @@ jobs:
       # 推送同步的更改到 Fork 仓库
       - name: Push changes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的 Token
         run: |
-          git push origin main
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main
